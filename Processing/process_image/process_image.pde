@@ -30,6 +30,8 @@ void draw() {
   popMatrix();
 
   adaptive.loadPixels();
+  //@TODO: Да се добави компресиране на данните преди изпращане(като последователност(Бели*брой черни*брой бели*брой и т.н)
+  //Също предварително изпращане на размерите на картината и ардуиното ще си слага мястото за нов ред само
   for (int i = 0; i < adaptive.pixels.length; i++) {
     //port.write(adaptive.pixels[i]);
     //print(adaptive.pixels[i] + ";");
