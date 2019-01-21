@@ -9,11 +9,11 @@ int plot_width=1000, plot_height=2500;
 
 //Изображението
 OpenCV opencv;
-PImage  img, /*thresh, blur,*/ adaptive;
+PImage  img, adaptive;
 String imgPath = "../data/test6.jpg";
 
 boolean hasArduino = false; //Флаг дали има свързано Ардуно
-boolean rotateIfNecessary = true;
+boolean rotateIfNecessary = true; //да се ротира ли изображение, ако не е ориентирано както плотера
 
 void setup() {
   connectToArdiono();//свързване към ардуното
@@ -28,10 +28,6 @@ void draw() {
   image(img, 0, 0);
   image(adaptive, img.width, 0);
   popMatrix();
-
-  // да не нагласят под картинките
-  //fill(0);
-  //text("adaptive threshold", img.width - 150, 0 +20 );
 
   adaptive.loadPixels();
   for (int i = 0; i < adaptive.pixels.length; i++) {
@@ -65,6 +61,7 @@ void processImage() {
   opencv.adaptiveThreshold(591, 1);
   adaptive = opencv.getSnapshot();
 
+  //Завъртане на изображението
   img_rotate();
   //Скалиране на изображението, за да може да се изчертае от плотера
   img_resize();
