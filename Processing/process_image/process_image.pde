@@ -9,10 +9,11 @@ int plot_width=1000, plot_height=2500;
 
 //Изображението
 OpenCV opencv;
-PImage  img, adaptive;
+PImage  img, /*thresh, blur,*/ adaptive;
 String imgPath = "../data/test6.jpg";
 
 boolean hasArduino = false; //Флаг дали има свързано Ардуно
+boolean rotateIfNecessary = true;
 
 void setup() {
   connectToArdiono();//свързване към ардуното
@@ -64,41 +65,27 @@ void processImage() {
   opencv.adaptiveThreshold(591, 1);
   adaptive = opencv.getSnapshot();
 
-  //Завъртане на изображението, ако ширината не е по-малка от височината
-  rotate();
+  img_rotate();
   //Скалиране на изображението, за да може да се изчертае от плотера
   img_resize();
 }
 
-//Обръщаме изображението, ако е необходимо, за да не се намаля трърде много
-//Ако е извиква, то е по-добре да е преди img_resize, защото инаме няма да има ефекта на разването на по-голямо изображение.
-void rotate() {
-  
-  //Проверка дали изображението е обърнато
-  if(plot_width < plot_height && adaptive.width > adaptive.height){
-  //Създаваме ново изображение
-  PImage rotated = createImage(adaptive.height, adaptive.width, ALPHA);
-  
-  //Зареждане на пикселите на двете изображение
-  rotated.loadPixels();
-  adaptive.loadPixels();
-  
-  //Номера на итерацията по старата ширина и номера на стария индекс по ширина
-  //@TODO: Да се види дали има някакъв готов начин за направата на това
-  int iter = 0;
-  int ind = 0;
-  for (int i = 0; i < adaptive.pixels.length; i++) {
-    if(ind > adaptive.height - 1){
-      ind = 0;
-      iter++;
+void img_rotate() {
+  if (rotateIfNecessary && ((adaptive.height < adaptive.width && plot_height > plot_width) 
+          || (adaptive.height > adaptive.width && plot_height < plot_width))) {
+    PImage rotate = createImage(adaptive.height, adaptive.width, ALPHA);
+    rotate.loadPixels();
+    int iter=0, ind =0;
+    for (int i = 0; i < adaptive.pixels.length; i++) {
+      if(ind > adaptive.width - 1){
+        iter++;
+        ind= 0;
+      }
+      rotate.pixels[ind*adaptive.height + iter] = adaptive.pixels[i];
+      ind++;
     }
-    rotated.pixels[i] = adaptive.pixels[iter + ind*adaptive.width];
-    ind++;
-  }
-  rotated.updatePixels();//Обновяване на пикселите на новото изображение
-  
-  //Променяме оригиналното изображение
-  adaptive = rotated;
+    rotate.updatePixels();
+    adaptive = rotate;
   }
 }
 
