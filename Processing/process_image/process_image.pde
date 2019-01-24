@@ -5,6 +5,12 @@ enum CannyThreshold {
   MEAN, MEDIAN
 };
 
+final color WHITE = color(255, 255, 255);
+final color BLACK = color(0, 0, 0);
+
+static final color PEN_UP = -1;
+static final color PEN_DOWN = -2;
+
 //серийна комуникация с Ардуиното
 Serial port;
 String portname = "COM3";  
@@ -15,8 +21,9 @@ int plot_width=1000, plot_height=2500;
 OpenCV opencv;
 Histogram grayHist, grayHistEqualized;
 PImage  img, cannyMean, cannyMedian, cannyMeanEqualized, cannyMedianEqualized, gray, grayEqualized;
-String imgPath = "../data/test8.jpg";
-float lowerInd = 0.66,upperInd = /*1.98,1.33*/1.98;
+String imgPath = "../data/test2.jpg";
+float lowerInd = 0.66,upperInd = /*1.98,1.33*/1.33;
+int[][] mat2d;
 
 boolean hasArduino = false; //Флаг дали има свързано Ардуно
 boolean rotateIfNecessary = false; //да се ротира ли изображение, ако не е ориентирано както плотера
@@ -24,6 +31,8 @@ boolean rotateIfNecessary = false; //да се ротира ли изображ�
 void setup() {
   connectToArdiono();//свързване към ардуното
   processImage(); //обработка на изображението
+  
+  sendFreemanCode(cannyMean);
 
   size(2080, 900);//задаване на размер на екрана с информация за изходното изображение
   noLoop(); // draw() се извиква само веднъж
@@ -39,14 +48,6 @@ void draw() {
   image(cannyMean/*Equalized*/, 0, img.height);
   image(cannyMedian/*Equalized*/, img.width, img.height);
   popMatrix();
-
-  //cannyMean.loadPixels();
-  //@TODO: Да се добави компресиране на данните преди изпращане(като последователност(Бели*брой черни*брой бели*брой и т.н)
-  //Също предварително изпращане на размерите на картината и ардуиното ще си слага мястото за нов ред само
-  for (int i = 0; i < cannyMean.pixels.length; i++) {
-    //port.write(gray(cannyMean.pixels[i]));
-    //print(adaptive.pixels[i] + ";");
-  }
 }
 
 //Започване на серийна комуникация с Ардуиното
@@ -158,7 +159,6 @@ PImage canny(PImage src, CannyThreshold metod) {
   } else {
     val = findMedian(src.pixels.length/2, vals);
   }
-  println(metod + " -> " + val + ";");
   PImage dest;
   //Инициализиране на OpenCV за обработка на изображението
   opencv = new OpenCV(this, src);
@@ -193,4 +193,43 @@ int findMean(int srcSize,int[] vals){
 
 static final int gray(color value) { 
   return max((value >> 16) & 0xff, (value >> 8 ) & 0xff, value & 0xff);  
+}
+
+void sendFreemanCode(PImage src){
+  mat2d = get2DMatrics(src);
+  for(int i=0;i<src.pixels.length;i++){
+    if(BLACK == src.pixels[i]){
+      int y = (int)i/src.height;
+      int x = i - src.height*y;
+      sendArdiuno(x);
+      sendArdiuno(y);
+      sendArdiuno(PEN_DOWN);
+      getFreemanCode(x,y);
+    }
+   }
+}
+
+int[][] get2DMatrics(PImage src){
+  int[][] res = new int[src.width][src.height];
+  src.loadPixels();
+  
+  int y = -1;
+  for(int i=0;i<src.pixels.length;i++){
+    if(i%src.height == 0){
+      y++;
+    }
+    res[i - src.height*y][y] = src.pixels[i];
+   }
+   
+   return res;
+}
+
+void getFreemanCode(int x, int y){
+  
+}
+
+void sendArdiuno(int val){
+  if (hasArduino) {
+    port.write(val);
+  }
 }
