@@ -11,6 +11,15 @@ final color BLACK = color(0, 0, 0);
 static final color PEN_UP = -1;
 static final color PEN_DOWN = -2;
 
+static final color DIR_UP = 0;
+static final color DIR_UP_RIGHT = 1;
+static final color DIR_RIGHT = 2;
+static final color DIR_DOWN_RIGHT = 3;
+static final color DIR_DOWN = 4;
+static final color DIR_DOWN_LEFT = 5;
+static final color DIR_LEFT = 6;
+static final color DIR_UP_LEFT = 7;
+
 //серийна комуникация с Ардуиното
 Serial port;
 String portname = "COM3";  
@@ -22,8 +31,8 @@ OpenCV opencv;
 Histogram grayHist, grayHistEqualized;
 PImage  img, cannyMean, cannyMedian, cannyMeanEqualized, cannyMedianEqualized, gray, grayEqualized;
 String imgPath = "../data/test2.jpg";
-float lowerInd = 0.66,upperInd = /*1.98,1.33*/1.33;
-int[][] mat2d;
+float lowerInd = 0.66, upperInd = /*1.98,1.33*/1.33;
+color[][] mat2d;
 
 boolean hasArduino = false; //Флаг дали има свързано Ардуно
 boolean rotateIfNecessary = false; //да се ротира ли изображение, ако не е ориентирано както плотера
@@ -31,7 +40,7 @@ boolean rotateIfNecessary = false; //да се ротира ли изображ�
 void setup() {
   connectToArdiono();//свързване към ардуното
   processImage(); //обработка на изображението
-  
+
   sendFreemanCode(cannyMean);
 
   size(2080, 900);//задаване на размер на екрана с информация за изходното изображение
@@ -143,19 +152,19 @@ void img_resize() {
 PImage canny(PImage src, CannyThreshold metod) {
   opencv = new OpenCV(this, src);
   PImage srcGrey = opencv.getSnapshot();
-  
+
   int[] vals = new int[256];
-   
-   srcGrey.loadPixels();
-   srcGrey.getNative();
-   for(int i=0;i<srcGrey.pixels.length;i++){
+
+  srcGrey.loadPixels();
+  srcGrey.getNative();
+  for (int i=0; i<srcGrey.pixels.length; i++) {
     vals[gray(srcGrey.pixels[i])]++;
-   }
-   
+  }
+
   int val = 0;
-  
-  if(CannyThreshold.MEAN.equals(metod)){
-    val = findMean(src.pixels.length,vals);
+
+  if (CannyThreshold.MEAN.equals(metod)) {
+    val = findMean(src.pixels.length, vals);
   } else {
     val = findMedian(src.pixels.length/2, vals);
   }
@@ -168,67 +177,99 @@ PImage canny(PImage src, CannyThreshold metod) {
   return dest;
 }
 
-int findMedian(int mid,int[] vals){
+int findMedian(int mid, int[] vals) {
   int res=0;
-  
-   for(int i=0;i<vals.length;i++){
-     if(vals[i] >= mid){
-       res = i;
-       break;
-     } else {
-       mid -= vals[i];
-     }
-   }
-   
-   return res;
+
+  for (int i=0; i<vals.length; i++) {
+    if (vals[i] >= mid) {
+      res = i;
+      break;
+    } else {
+      mid -= vals[i];
+    }
+  }
+
+  return res;
 }
 
-int findMean(int srcSize,int[] vals){
-   int sum = 0;
-   for(int i=0;i<vals.length;i++){
-     sum += i*vals[i];
-   }
-   return sum/srcSize;
+int findMean(int srcSize, int[] vals) {
+  int sum = 0;
+  for (int i=0; i<vals.length; i++) {
+    sum += i*vals[i];
+  }
+  return sum/srcSize;
 }
 
 static final int gray(color value) { 
-  return max((value >> 16) & 0xff, (value >> 8 ) & 0xff, value & 0xff);  
+  return max((value >> 16) & 0xff, (value >> 8 ) & 0xff, value & 0xff);
 }
 
-void sendFreemanCode(PImage src){
+void sendFreemanCode(PImage src) {
   mat2d = get2DMatrics(src);
-  for(int i=0;i<src.pixels.length;i++){
-    if(BLACK == src.pixels[i]){
-      int y = (int)i/src.height;
-      int x = i - src.height*y;
-      sendArdiuno(x);
-      sendArdiuno(y);
-      sendArdiuno(PEN_DOWN);
-      getFreemanCode(x,y);
+  for (int i=0; i<mat2d.length; i++) {
+    for (int j=0; j<mat2d[0].length; j++) {
+      if (BLACK == mat2d[i][j]) {
+        sendArdiuno(i);
+        sendArdiuno(j);
+        sendArdiuno(PEN_DOWN);
+        println(i + "-"+ j);
+        getFreemanCode(i, j, mat2d.length, mat2d[0].length);
+        sendArdiuno(PEN_UP);
+      }
     }
-   }
+  }
 }
 
-int[][] get2DMatrics(PImage src){
-  int[][] res = new int[src.width][src.height];
+void getFreemanCode(int x, int y, int width, int height) {
+  mat2d[x][y] = WHITE;
+  if (y - 1 >= 0 && mat2d[x][y - 1] == BLACK) {
+    sendArdiuno(DIR_UP);
+    getFreemanCode(x, y-1, width, height);
+  } else if (y - 1 >= 0 && x + 1 < width && mat2d[x+1][y - 1] == BLACK) {
+    sendArdiuno(DIR_UP_RIGHT);
+    getFreemanCode(x+1, y-1, width, height);
+  } else if (x + 1 < width && mat2d[x+1][y] == BLACK) {
+    sendArdiuno(DIR_RIGHT);
+    getFreemanCode(x+1, y, width, height);
+  }
+  if (y + 1 < height && x + 1 < width && mat2d[x+1][y + 1] == BLACK) {
+    sendArdiuno(DIR_DOWN_RIGHT);
+    getFreemanCode(x+1, y+1, width, height);
+  }
+  if (y + 1 < height && mat2d[x][y + 1] == BLACK) {
+    sendArdiuno(DIR_DOWN);
+    getFreemanCode(x, y+1, width, height);
+  }
+  if (y + 1 < height && x - 1 >= 0 && mat2d[x-1][y + 1] == BLACK) {
+    sendArdiuno(DIR_DOWN_LEFT);
+    getFreemanCode(x-1, y+1, width, height);
+  }
+  if (x - 1 >= 0 && mat2d[x-1][y] == BLACK) {
+    sendArdiuno(DIR_LEFT);
+    getFreemanCode(x-1, y, width, height);
+  }
+  if (y -1 >= 0 && x - 1 >= 0 && mat2d[x-1][y-1] == BLACK) {
+    sendArdiuno(DIR_UP_LEFT);
+    getFreemanCode(x-1, y-1, width, height);
+  }
+}
+
+color[][] get2DMatrics(PImage src) {
+  color[][] res = new color[src.width][src.height];
   src.loadPixels();
-  
+
   int y = -1;
-  for(int i=0;i<src.pixels.length;i++){
-    if(i%src.height == 0){
+  for (int i=0; i<src.pixels.length; i++) {
+    if (i%src.width == 0) {
       y++;
     }
-    res[i - src.height*y][y] = src.pixels[i];
-   }
-   
-   return res;
+    res[i - src.width*y][y] = src.pixels[i];
+  }
+
+  return res;
 }
 
-void getFreemanCode(int x, int y){
-  
-}
-
-void sendArdiuno(int val){
+void sendArdiuno(int val) {
   if (hasArduino) {
     port.write(val);
   }
