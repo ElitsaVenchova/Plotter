@@ -9,11 +9,11 @@ int plot_width=1000, plot_height=2500;
 
 //Изображението
 OpenCV opencv;
-PImage  img, canny,ad;
+PImage  img, canny,ad,rotate;
 String imgPath = "../data/test6.jpg";
 
 boolean hasArduino = false; //Флаг дали има свързано Ардуно
-boolean rotateIfNecessary = false; //да се ротира ли изображение, ако не е ориентирано както плотера
+boolean rotateIfNecessary = true; //да се ротира ли изображение, ако не е ориентирано както плотера
 
 void setup() {
   connectToArdiono();//свързване към ардуното
@@ -30,6 +30,7 @@ void draw() {
   image(img, 0, 0);
   image(canny, img.width, 0);
   image(ad, 0, img.height);
+  //image(rotate, img.width, img.height);
   popMatrix();
 
   canny.loadPixels();
@@ -54,49 +55,50 @@ void processImage() {
 
   //Зареждане на изображението
   img = loadImage(imgPath);
-
-  //Инициализиране на OpenCV за обработка на изображението
-  opencv = new OpenCV(this, img);  
-  
-  opencv = new OpenCV(this, img);
-  opencv.findCannyEdges(50,300);
-  canny = opencv.getSnapshot();
-  canny.filter(INVERT);
-  
-  opencv = new OpenCV(this, img);
-  opencv.findCannyEdges(0,0);
-  ad = opencv.getSnapshot();
-  ad.filter(INVERT);
-
   //Завъртане на изображението
   img_rotate();
   //Скалиране на изображението, за да може да се изчертае от плотера
   img_resize();
+
+  //Инициализиране на OpenCV за обработка на изображението
+  opencv = new OpenCV(this, img);
+  opencv.findCannyEdges(50,200);
+  canny = opencv.getSnapshot();
+  canny.filter(INVERT);
+  
+  opencv = new OpenCV(this, img);
+  opencv.findCannyEdges(50,150);
+  ad = opencv.getSnapshot();
+  ad.filter(INVERT);
+
 }
 
+//@TODO: Ако има готова решение, да се замести с него
 void img_rotate() {
-  if (rotateIfNecessary && ((canny.height < canny.width && plot_height > plot_width) 
-          || (canny.height > canny.width && plot_height < plot_width))) {
-    PImage rotate = createImage(canny.height, canny.width, ALPHA);
+  img.loadPixels();
+  if (rotateIfNecessary && (img.height > plot_height || img.width > plot_width) &&
+    ((img.height < img.width && plot_height > plot_width) 
+          || (img.height > img.width && plot_height < plot_width))) {
+     rotate = createImage(img.height, img.width, RGB);
     rotate.loadPixels();
     int iter=0, ind =0;
-    for (int i = 0; i < canny.pixels.length; i++) {
-      if(ind > canny.width - 1){
+    for (int i = 0; i < img.pixels.length; i++) {
+      if(ind > img.width - 1){
         iter++;
         ind= 0;
       }
-      rotate.pixels[ind*canny.height + iter] = canny.pixels[i];
+      rotate.pixels[ind*img.height + iter] = img.pixels[i];
       ind++;
     }
     rotate.updatePixels();
-    canny = rotate;
+    img = rotate;
   }
 }
 
 //Промяна на размера на изображението с цел да може да се изчертае от плотера
 void img_resize() {
   //В началото новите размери са равни на старите
-  int new_height = canny.height, new_width = canny.width;
+  int new_height = img.height, new_width = img.width;
 
   //Ако височина на изображението е по-голяма от тази на плотера
   if (plot_height < new_height) {
@@ -112,5 +114,5 @@ void img_resize() {
   }
 
   //Задаване на новите размери на изображението
-  canny.resize(new_width, new_height);
+  img.resize(new_width, new_height);
 }
