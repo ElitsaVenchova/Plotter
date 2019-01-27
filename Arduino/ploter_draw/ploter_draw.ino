@@ -4,8 +4,10 @@
 const int stepPinX = 2;
 const int dirPinX = 3;
 // defines pins numbers - Height
-const int stepPinY = 4;
-const int dirPinY = 5;
+const int stepPinY = 9;
+const int dirPinY = 8;
+//pen pin
+const int penPin = 3;
 
 //Числови стойности, които ще се подават за задаване на действие
 const int PEN_UP = -1;
@@ -23,19 +25,20 @@ const int DIR_UP_LEFT = 7;
 const int END = 8; //Край. Тогава всичко трябва да се върне в начална позиция
 
 //Размери на плотера
-const int MAX_X = 200*11 + 50;
-const int MAX_Y = 200*9;
+const int MAX_X = 200 * 11 + 50;
+const int MAX_Y = 200 * 9;
 
-//Позицията на сервото за пускане на химикалката
-const int PEN_DOWN_POS = 3;
+//Горна и долна позиция на сервото
+const int PEN_UP_POS = 180;
+const int PEN_DOWN_POS = 135;
 
 int currentX = 0, currentY = 0; //текуща позиция по X и Y
-bool penIsUp = true; //Позицията на химикалката
+bool isPenUp = true; //Позицията на химикалката
 Servo myservo;//Управлението на химикалката
 
 void setup() {
   //Инициализиране на химикалката
-  myservo.attach(9);
+  myservo.attach(penPin);
   movePen(PEN_UP);
 
   Serial.begin(9600);//Отваряне серийна комуникация за получаване на пикселите на изображението
@@ -79,15 +82,22 @@ void loop() {
   delay(10);
 }
 
-
 //Управление на химикалката
 void movePen(int dir) {
-  if (!penIsUp && dir == PEN_UP) {
-    int penCurrPos = myservo.read(); //вземане на текущата позиция
-    myservo.write(-penCurrPos);  // връщане в начална позиция 0
-  } else if (penIsUp && dir == PEN_UP) {
-    int penCurrPos = myservo.read(); //вземане на текущата позиция
-    myservo.write(PEN_DOWN_POS - penCurrPos); // Преместване до желаната позиция
+  if (!isPenUp && dir == PEN_UP) {
+    for (int pos = PEN_DOWN_POS; pos <= PEN_UP_POS; pos += 1) { // goes from 135 degrees to 180 degrees
+      // in steps of 1 degree
+      myservo.write(pos);
+      delay(15);
+    }
+    isPenUp = true;
+  } else if (isPenUp && dir == PEN_DOWN) {
+    for (int pos = PEN_UP_POS; pos >= PEN_DOWN_POS; pos -= 1) { // goes from 180 degrees to 135 degrees
+      // in steps of 1 degree
+      myservo.write(pos);
+      delay(70);
+    }
+    isPenUp = false;
   }
 }
 
@@ -136,12 +146,21 @@ void move(int freemanCode) {
 //Правене на стъпка по X и по Y.
 //В отделни фуции са, защото може да се окаже, че една стъпка ще бъде повече от 1 оборот
 void moveStepX(int dir) {
-  digitalWrite(dirPinX, dir);
-  digitalWrite(stepPinX, HIGH);
-  delayMicroseconds(500);
-  digitalWrite(stepPinX, LOW);
-  delay(20);
-  currentX++;
+    digitalWrite(dirPinX, dir);//задавае на посоката
+  if (!isPenUp) {//
+    digitalWrite(stepPinX, HIGH);
+    delayMicroseconds(500);
+    digitalWrite(stepPinX, LOW);
+    delay(20);
+    currentX ++;
+  } else {
+    for (int x = 0; x < 60; x++) {
+      digitalWrite(stepPinX, HIGH);
+      delayMicroseconds(500);
+      digitalWrite(stepPinX, LOW);
+      delay(20);      
+    }
+  }
 }
 void moveStepY(int dir) {
   digitalWrite(dirPinY, dir);
