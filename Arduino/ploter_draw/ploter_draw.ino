@@ -23,8 +23,8 @@ const int DIR_UP_LEFT = 7;
 const int END = 8; //Край. Тогава всичко трябва да се върне в начална позиция
 
 //Размери на плотера
-const int MAX_X = 200;
-const int MAX_Y = 200;
+const int MAX_X = 200*11 + 50;
+const int MAX_Y = 200*9;
 
 //Позицията на сервото за пускане на химикалката
 const int PEN_DOWN_POS = 3;
