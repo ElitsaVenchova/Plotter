@@ -20,6 +20,8 @@ static final int DIR_DOWN_LEFT = 5;
 static final int DIR_LEFT = 6;
 static final int DIR_UP_LEFT = 7;
 
+static final int END = 8;
+
 //серийна комуникация с Ардуиното
 Serial port;
 String portname = "COM3";  
@@ -30,7 +32,7 @@ int plot_width=1000, plot_height=2500;
 OpenCV opencv;
 Histogram grayHist, grayHistEqualized;//Хистограмата на сивото изображение, Хистограмата след изравняване
 PImage  img, cannyMean, cannyMedian, cannyMeanEqualized, cannyMedianEqualized, gray, grayEqualized;
-String imgPath = "../data/test2.jpg";//Изображението, което ще се обработва
+String imgPath = "../data/test17.jpg";//Изображението, което ще се обработва
 float lowerInd = 0.66, upperInd = /*1.98,1.33*/1.33;//Индектси за определяне на горна и долна граница на threshold
 color[][] mat2d;//Пикселите на изображението, което ще се изчертава в двумерен масив
 
@@ -238,14 +240,15 @@ void sendFreemanCode(PImage src) {
         sendArdiuno(i);
         sendArdiuno(j);
         sendArdiuno(PEN_DOWN);
-        println(i + "-"+ j);
         getFreemanCode(i, j, mat2d.length, mat2d[0].length);
         sendArdiuno(PEN_UP);
       }
     }
   }
+  sendArdiuno(END); //Край на изображението
 }
 
+//Изпращене на следващия от (x,y) пиксел от контура.
 void getFreemanCode(int x, int y, int width, int height) {
   mat2d[x][y] = WHITE;
   if (y - 1 >= 0 && mat2d[x][y - 1] == BLACK) {
@@ -257,29 +260,25 @@ void getFreemanCode(int x, int y, int width, int height) {
   } else if (x + 1 < width && mat2d[x+1][y] == BLACK) {
     sendArdiuno(DIR_RIGHT);
     getFreemanCode(x+1, y, width, height);
-  }
-  if (y + 1 < height && x + 1 < width && mat2d[x+1][y + 1] == BLACK) {
+  } else if (y + 1 < height && x + 1 < width && mat2d[x+1][y + 1] == BLACK) {
     sendArdiuno(DIR_DOWN_RIGHT);
     getFreemanCode(x+1, y+1, width, height);
-  }
-  if (y + 1 < height && mat2d[x][y + 1] == BLACK) {
+  } else if (y + 1 < height && mat2d[x][y + 1] == BLACK) {
     sendArdiuno(DIR_DOWN);
     getFreemanCode(x, y+1, width, height);
-  }
-  if (y + 1 < height && x - 1 >= 0 && mat2d[x-1][y + 1] == BLACK) {
+  } else if (y + 1 < height && x - 1 >= 0 && mat2d[x-1][y + 1] == BLACK) {
     sendArdiuno(DIR_DOWN_LEFT);
     getFreemanCode(x-1, y+1, width, height);
-  }
-  if (x - 1 >= 0 && mat2d[x-1][y] == BLACK) {
+  } else if (x - 1 >= 0 && mat2d[x-1][y] == BLACK) {
     sendArdiuno(DIR_LEFT);
     getFreemanCode(x-1, y, width, height);
-  }
-  if (y -1 >= 0 && x - 1 >= 0 && mat2d[x-1][y-1] == BLACK) {
+  } else if (y -1 >= 0 && x - 1 >= 0 && mat2d[x-1][y-1] == BLACK) {
     sendArdiuno(DIR_UP_LEFT);
     getFreemanCode(x-1, y-1, width, height);
   }
 }
 
+//Преобразуване на масива с пикселите в двумерен за по-лесно обработване
 color[][] get2DMatrics(PImage src) {
   color[][] res = new color[src.width][src.height];
   src.loadPixels();
@@ -304,6 +303,7 @@ void connectToArdiono() {
   }
 }
 
+//Изпращане на стойност на Arduino
 void sendArdiuno(int val) {
   if (hasArduino) {
     port.write(val);
