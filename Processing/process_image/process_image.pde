@@ -8,9 +8,6 @@ final color WHITE = color(255, 255, 255);
 final color BLACK = color(0, 0, 0);
 
 //Числови стойности, които ще се подават на Arduino за задаване на действие
-static final int PEN_UP = -1;
-static final int PEN_DOWN = -2;
-
 static final int DIR_UP = 0;
 static final int DIR_UP_RIGHT = 1;
 static final int DIR_RIGHT = 2;
@@ -20,24 +17,27 @@ static final int DIR_DOWN_LEFT = 5;
 static final int DIR_LEFT = 6;
 static final int DIR_UP_LEFT = 7;
 
-static final int END = 8;
+static final int PEN_UP = 8;
+static final int PEN_DOWN = 9;
+
+static final int END = 10;
 
 //серийна комуникация с Ардуиното
 Serial port;
 String portname = "COM3";  
 int baudrate = 9600;
-int plot_width=1000, plot_height=2500;
+int plot_width=(200 * 11 + 50)/40, plot_height=(200 * 9)/40;//56/45
 
 //Изображението
 OpenCV opencv;
 Histogram grayHist, grayHistEqualized;//Хистограмата на сивото изображение, Хистограмата след изравняване
 PImage  img, cannyMean, cannyMedian, cannyMeanEqualized, cannyMedianEqualized, gray, grayEqualized;
-String imgPath = "../data/test17.jpg";//Изображението, което ще се обработва
+String imgPath = "../data/test3.jpg";//Изображението, което ще се обработва
 float lowerInd = 0.66, upperInd = /*1.98,1.33*/1.33;//Индектси за определяне на горна и долна граница на threshold
 color[][] mat2d;//Пикселите на изображението, което ще се изчертава в двумерен масив
 
-boolean hasArduino = false; //Флаг дали има свързано Ардуно
-boolean rotateIfNecessary = false; //да се ротира ли изображение, ако не е ориентирано както плотера
+boolean hasArduino = true; //Флаг дали има свързано Ардуно
+boolean rotateIfNecessary = true; //да се ротира ли изображение, ако не е ориентирано както плотера
 
 void setup() {
   connectToArdiono();//свързване към ардуното
@@ -234,6 +234,7 @@ static final int gray(color value) {
 
 void sendFreemanCode(PImage src) {
   mat2d = get2DMatrics(src);
+  sendArdiuno(PEN_UP);
   for (int i=0; i<mat2d.length; i++) {
     for (int j=0; j<mat2d[0].length; j++) {
       if (BLACK == mat2d[i][j]) {
@@ -305,7 +306,10 @@ void connectToArdiono() {
 
 //Изпращане на стойност на Arduino
 void sendArdiuno(int val) {
+  println(val);
   if (hasArduino) {
-    port.write(val);
+    port.write(Integer.toString(val));
+    port.write('e');
+    delay(1000);
   }
 }
