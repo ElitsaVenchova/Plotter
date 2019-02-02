@@ -32,7 +32,7 @@ int plot_width=(200 * 11 + 50)/40, plot_height=(200 * 9)/40;//56/45
 OpenCV opencv;
 Histogram grayHist, grayHistEqualized;//Хистограмата на сивото изображение, Хистограмата след изравняване
 PImage  img, cannyMean, cannyMedian, cannyMeanEqualized, cannyMedianEqualized, gray, grayEqualized;
-String imgPath = "../data/test18.jpg";//Изображението, което ще се обработва
+String imgPath = "../data/test20.png";//Изображението, което ще се обработва
 float lowerInd = 0.66, upperInd = /*1.98,1.33*/1.33;//Индектси за определяне на горна и долна граница на threshold
 color[][] mat2d;//Пикселите на изображението, което ще се изчертава в двумерен масив
 
