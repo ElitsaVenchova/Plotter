@@ -72,13 +72,9 @@ void loop() {
       Serial.println("ok");
       //Прочитане на новата позиция (x,y)
       int x = -1, y = -1;
-      while (x != -1) { //Прочитане на X
-        x =  readData();
-      }
+      x =  readData();
       Serial.println("ok");
-      while (y != -1) {//Прочитане на Y
-        y = readData();
-      }
+      y = readData();
       move(x, y); //Преместване на позиция (x,y)
     } else if (val == PEN_DOWN) { //Сваляне на химикалката
       movePen(PEN_DOWN);
@@ -88,8 +84,8 @@ void loop() {
     } else { //Получаваме код на Фрийман
       move(val);
     }
+    Serial.println("ok");
   }
-  Serial.println("ok");
   delay(10);
 }
 
@@ -117,6 +113,7 @@ int readData(){
     else if (c == 'e') {
       res = v;
       v = 0;
+      break;
     }
   }
   Serial.println(res);
