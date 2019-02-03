@@ -6,6 +6,7 @@ enum CannyThreshold {
 
 Histogram grayHist, grayHistEqualized;//Хистограмата на сивото изображение, Хистограмата след изравняване
 PImage  cannyMean, cannyMedian, cannyMeanEqualized, cannyMedianEqualized;
+float lowerInd = 0.66, upperInd = /*1.98,1.33*/1.33;//Индектси за определяне на горна и долна граница на threshold
 
 //Прилагане на алгоритъма Canny
 //src - входно изображение

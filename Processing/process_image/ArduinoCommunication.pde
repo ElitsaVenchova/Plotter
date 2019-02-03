@@ -4,7 +4,7 @@ String portname = "COM3";
 int baudrate = 9600;
 int plot_width=(200 * 11 + 50)/40, plot_height=(200 * 9)/40;//56/45
 
-boolean hasArduino = false; //Флаг дали има свързано Ардуно
+boolean hasArduino = true; //Флаг дали има свързано Ардуно
 
 //################################################################Arduino
 

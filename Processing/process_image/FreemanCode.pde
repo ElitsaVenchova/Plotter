@@ -12,12 +12,13 @@ static final int PEN_SHIFT = 8;
 
 static final int END = 9;
 
+boolean isEnd = false ;
+
 int x=0, y=0;
 
 //################################################################Freeman Chain Code
 
 void sendFreemanCode(PImage src) {
-  res = src;
   mat2d = get2DMatrics(src);
   for (int i=0; i<mat2d.length; i++) {
     for (int j=0; j<mat2d[0].length; j++) {
@@ -31,6 +32,7 @@ void sendFreemanCode(PImage src) {
   }
   moveAsFreemanCode(0, 0);
   sendArdiuno(END); //Край на изображението
+  isEnd = true;
 }
 
 void moveAsFreemanCode(int destX, int destY) {
