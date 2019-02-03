@@ -1,10 +1,14 @@
 
 ~$otter_documentation.docx
 ~WRL0005.tmp
-Processing/output/1img.jpg
-Processing/output/2gray.jpg
-Processing/output/4cannyMean.jpg
-Processing/output/6cannyMeanEqualized.jpg
-Processing/output/5cannyMedian.jpg
+Processing/output/10cannyMeanEqualized.jpg
 Processing/output/3grayEqualized.jpg
-Processing/output/7cannyMedianEqualized.jpg
+Processing/output/2gray.jpg
+Processing/output/4threshold.jpg
+Processing/output/1img.jpg
+Processing/output/7cannyMedian.jpg
+Processing/output/6cannyMean.jpg
+Processing/output/5adaptive.jpg
+Processing/output/9adaptiveEqualized.jpg
+Processing/output/11cannyMedianEqualized.jpg
+Processing/output/8thresholdEqualized.jpg
