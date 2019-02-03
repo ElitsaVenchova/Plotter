@@ -19,29 +19,27 @@ const int DIR_DOWN_LEFT = 5;
 const int DIR_LEFT = 6;
 const int DIR_UP_LEFT = 7;
 
-const int PEN_UP = 8;
-const int PEN_DOWN = 9;
+const int PEN_SHIFT = 8;
 
-const int END = 10; //Край. Тогава всичко трябва да се върне в начална позиция
+const int END = 9; //Край. Тогава всичко трябва да се върне в начална позиция
 
 //Размери на плотера
 const int MAX_X = 200 * 11 + 50;
 const int MAX_Y = 200 * 9;
 
 //Горна и долна позиция на сервото
-const int PEN_UP_POS = 160;
+const int PEN_UP_POS = 150;
 const int PEN_DOWN_POS = 135;
 
 int currentX = 0, currentY = 0; //текуща позиция по X и Y
-int posX = 0, posY = 0; //текуща позиция по X и Y
 bool isPenUp = false; //Позицията на химикалката
 bool isPrevPenUp = true;
-Servo myservo;//Управлението на химикалката
+Servo penServo;//Управлението на химикалката
 
 void setup() {
   //Инициализиране на химикалката
-  myservo.attach(penPin);
-  //movePen(PEN_UP);
+  penServo.attach(penPin);
+  movePen();
 
   // Sets the two pins as Outputs - Width
   pinMode(stepPinX, OUTPUT);
@@ -67,20 +65,10 @@ void loop() {
   if ( Serial.available() )
   {
     int val = readData();//Прочитане на стойност
-    if (val == PEN_UP) { //Вдигане на химикалката
-      movePen(PEN_UP);
-      Serial.println("ok");
-      //Прочитане на новата позиция (x,y)
-      int x = -1, y = -1;
-      x =  readData();
-      Serial.println("ok");
-      y = readData();
-      move(x, y); //Преместване на позиция (x,y)
-    } else if (val == PEN_DOWN) { //Сваляне на химикалката
-      movePen(PEN_DOWN);
+    if (val == PEN_SHIFT) { //Вдигане на химикалката
+      movePen();
     } else if (val == END) { //Край на изображението
-      movePen(PEN_UP);
-      move(0, 0);
+      Serial.println("END");
     } else { //Получаваме код на Фрийман
       move(val);
     }
@@ -96,23 +84,25 @@ void establishContact() {
   }
 }
 
-int readData(){
+int readData() {
   int res;
   int c;
-  int v=0;
-  
-      Serial.println("before read");
+  int v = -1;
+
   while (Serial.available()) {
     c = Serial.read();
-    
+
     // handle digits
     if ((c >= '0') && (c <= '9')) {
+      if (v == -1) {
+        v = 0;
+      }
       v = 10 * v + c - '0';
     }
     // handle delimiter
-    else if (c == 'e') {
+    else if (c == 'e' && v != -1) {
       res = v;
-      v = 0;
+      v = -1;
       break;
     }
   }
@@ -121,72 +111,51 @@ int readData(){
 }
 
 //Управление на химикалката
-void movePen(int dir) {
-  if (!isPenUp && dir == PEN_UP) {
-    Serial.println("up");
-    for (int pos = PEN_DOWN_POS; pos <= PEN_UP_POS; pos += 1) { // goes from 135 degrees to 180 degrees
+void movePen() {
+  if (!isPenUp) {
+    int currPos = penServo.read();
+    Serial.print("up-");
+    Serial.println(currPos);
+    for (int pos = currPos; pos <= PEN_UP_POS; pos += 1) { // goes from 135 degrees to 180 degrees
       // in steps of 1 degree
-      myservo.write(pos);
+      penServo.write(pos);
       delay(15);
     }
     isPenUp = true;
-  } else if (isPenUp && dir == PEN_DOWN) {
-    Serial.println("down");
+  } else if (isPenUp) {
+    int currPos = penServo.read();
+    Serial.print("down-");
+    Serial.println(currPos);
     for (int pos = PEN_UP_POS; pos >= PEN_DOWN_POS; pos -= 1) { // goes from 180 degrees to 135 degrees
       // in steps of 1 degree
-      myservo.write(pos);
+      penServo.write(pos);
       delay(70);
     }
     isPenUp = false;
   }
 }
 
-//Преместване на химикалката на определена позиция (x,y)
-void move(int x, int y) {
-  Serial.println(posX);
-  Serial.println(posY);
-  Serial.println(x);
-  Serial.println(y);
-  while (x != posX || y != posY) {
-    if (x - currentX > 0) {
-      moveStepX(LOW);
-      posX--;
-    } else if (x - posX < 0) {
-      moveStepX(HIGH);
-      posX++;
-    }
-
-    if (y - posY > 0) {
-      moveStepY(LOW);
-      posY--;
-    } else if (y - posY < 0) {
-      moveStepY(HIGH);
-      posY++;
-    }
-  }
-}
-
 //Преместване на позията по зададения код на Фрийман
 void move(int freemanCode) {
   if (freemanCode == DIR_UP) {
-    moveStepX(HIGH);
+    moveStepX(LOW);
   } else if (freemanCode == DIR_UP_RIGHT) {
-    moveStepX(HIGH);
+    moveStepX(LOW);
     moveStepY(HIGH);
   } else if (freemanCode == DIR_RIGHT) {
     moveStepY(HIGH);
   } else if (freemanCode == DIR_DOWN_RIGHT) {
-    moveStepX(LOW);
+    moveStepX(HIGH);
     moveStepY(HIGH);
   } else if (freemanCode == DIR_DOWN) {
-    moveStepX(LOW);
+    moveStepX(HIGH);
   } else if (freemanCode == DIR_DOWN_LEFT) {
-    moveStepX(LOW);
+    moveStepX(HIGH);
     moveStepY(LOW);
   } else if (freemanCode == DIR_LEFT) {
     moveStepY(LOW);
   } else if (freemanCode == DIR_UP_LEFT) {
-    moveStepX(HIGH);
+    moveStepX(LOW);
     moveStepY(LOW);
   }
 }
@@ -195,46 +164,123 @@ void move(int freemanCode) {
 //В отделни фуции са, защото може да се окаже, че една стъпка ще бъде повече от 1 оборот
 void moveStepX(int dir) {
   int lenght = 0;
-  if(currentX >= MAX_X){
-    lenght = -1;
-  } else if (!isPrevPenUp) {
-    if (!isPenUp) { lenght = 40;
-    } else { lenght = 60; }
+  if (!isPrevPenUp) {
+    if (!isPenUp) {
+      lenght = 40;
+    } else {
+      lenght = 60;
+    }
   } else {
-    if (!isPenUp) { lenght = -1;
-    } else { lenght = 30; }
+    if (!isPenUp) {
+      lenght = -1;
+    } else {
+      lenght = 30;
+    }
   }
 
   digitalWrite(dirPinX, dir);//задавае на посоката
   for (int x = 0; x < lenght; x++) {
-    digitalWrite(stepPinX, HIGH);
-    delayMicroseconds(500);
-    digitalWrite(stepPinX, LOW);
-    delay(20);                       // wait for a second
-    currentX++;
+    if (currentX >= 0 && currentX <= MAX_X) {
+      digitalWrite(stepPinX, HIGH);
+      delayMicroseconds(500);
+      digitalWrite(stepPinX, LOW);
+      delay(20);
+      if (dir == HIGH) {
+        currentX++;
+      } else {
+        currentX--;
+      }
+    } else {
+      Serial.println("X --> -1");
+      break;
+    }
   }
   isPrevPenUp = isPenUp;
   delay(20);
 }
 void moveStepY(int dir) {
   int lenght = 0;
-  if(currentY >= MAX_Y){
-    lenght = -1;
-  } else if (!isPrevPenUp) {
-    if (!isPenUp) { lenght = 40;
-    } else { lenght = 60; }
+  if (!isPrevPenUp) {
+    if (!isPenUp) {
+      lenght = 40;
+    } else {
+      lenght = 60;
+    }
   } else {
-    if (!isPenUp) { lenght = -1;
-    } else { lenght = 30; }
+    if (!isPenUp) {
+      lenght = -1;
+    } else {
+      lenght = 30;
+    }
   }
 
   digitalWrite(dirPinY, dir);//задавае на посоката
   for (int x = 0; x < lenght; x++) {
-    digitalWrite(stepPinY, HIGH);
-    delayMicroseconds(500);
-    digitalWrite(stepPinY, LOW);
-    delay(20);                       // wait for a second
-    currentY++;
+    if (currentY >= 0 && currentY <= MAX_X) {
+      digitalWrite(stepPinY, HIGH);
+      delayMicroseconds(500);
+      digitalWrite(stepPinY, LOW);
+      delay(20);
+      if (dir == HIGH) {
+        currentY++;
+      } else {
+        currentY--;
+      }
+    } else {
+      Serial.println("Y --> -1");
+      break;
+    }
+  }
+  isPrevPenUp = isPenUp;
+  delay(20);
+}
+
+void moveStep(int dirX, int dirY) {
+  int lenght = 0;
+  if (!isPrevPenUp) {
+    if (!isPenUp) {
+      lenght = 40;
+    } else {
+      lenght = 60;
+    }
+  } else {
+    if (!isPenUp) {
+      lenght = -1;
+    } else {
+      lenght = 30;
+    }
+  }
+
+  digitalWrite(dirPinX, dirX);//задавае на посоката
+  digitalWrite(dirPinY, dirY);//задавае на посоката
+  for (int x = 0; x < lenght; x++) {
+    if (currentX >= 0 && currentX <= MAX_X && dirX != -1) {
+      digitalWrite(stepPinX, HIGH);
+      delayMicroseconds(500);
+      digitalWrite(stepPinX, LOW);
+      delay(20);
+      if (dirX == HIGH) {
+        currentX++;
+      } else {
+        currentX--;
+      }
+    } else if(dirX != -1) {
+      Serial.println("X --> -1");
+    }
+    
+    if (currentY >= 0 && currentY <= MAX_X && dirY != -1) {
+      digitalWrite(stepPinY, HIGH);
+      delayMicroseconds(500);
+      digitalWrite(stepPinY, LOW);
+      delay(20);
+      if (dirY== HIGH) {
+        currentY++;
+      } else {
+        currentY--;
+      }
+    } else if(dirY != -1) {
+      Serial.println("Y --> -1");
+    }    
   }
   isPrevPenUp = isPenUp;
   delay(20);
