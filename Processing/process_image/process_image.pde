@@ -17,16 +17,16 @@ static final int DIR_DOWN_LEFT = 5;
 static final int DIR_LEFT = 6;
 static final int DIR_UP_LEFT = 7;
 
-static final int PEN_UP = 8;
-static final int PEN_DOWN = 9;
+static final int PEN_SHIFT = 8;
 
-static final int END = 10;
+static final int END = 9;
 
 //серийна комуникация с Ардуиното
 Serial port;
 String portname = "COM3";  
 int baudrate = 9600;
 int plot_width=(200 * 11 + 50)/40, plot_height=(200 * 9)/40;//56/45
+int x=0, y=0;
 
 //Изображението
 OpenCV opencv;
@@ -234,48 +234,93 @@ static final int gray(color value) {
 
 void sendFreemanCode(PImage src) {
   mat2d = get2DMatrics(src);
-  sendArdiuno(PEN_UP);
   for (int i=0; i<mat2d.length; i++) {
     for (int j=0; j<mat2d[0].length; j++) {
       if (BLACK == mat2d[i][j]) {
-        sendArdiuno(i);
-        sendArdiuno(j);
-        sendArdiuno(PEN_DOWN);
-        getFreemanCode(i, j, mat2d.length, mat2d[0].length);
-        sendArdiuno(PEN_UP);
+        sendFreemanCode(i,j);
+        sendArdiuno(PEN_SHIFT);
+        getFreemanCode(mat2d.length, mat2d[0].length);
+        sendArdiuno(PEN_SHIFT);
       }
     }
   }
+  sendFreemanCode(0,0);
   sendArdiuno(END); //Край на изображението
 }
 
+void sendFreemanCode(int destX, int destY){
+  while(x != destX || y != destY){
+    if(x > destX && y == destY){
+      sendArdiuno(DIR_UP);
+      x--;
+    } else if(x > destX && y < destY){
+      sendArdiuno(DIR_UP_RIGHT);
+      x--;
+      y++;
+    } else if(x == destX && y < destY){
+      sendArdiuno(DIR_RIGHT);
+      y++;
+    } else if(x < destX && y < destY){
+      sendArdiuno(DIR_DOWN_RIGHT);
+      x++;
+      y++;
+    } else if(x < destX && y == destY){
+      sendArdiuno(DIR_DOWN);
+      x++;
+    } else if(x < destX && y > destY){
+      sendArdiuno(DIR_DOWN_LEFT);
+      x++;
+      y--;
+    } else if(x == destX && y > destY){
+      sendArdiuno(DIR_LEFT);
+      y--;
+    }else if(x > destX && y > destY){
+      sendArdiuno(DIR_UP_LEFT);
+      x--;
+      y--;
+    }
+  }
+}
+
 //Изпращене на следващия от (x,y) пиксел от контура.
-void getFreemanCode(int x, int y, int width, int height) {
+void getFreemanCode(int width, int height) {
   mat2d[x][y] = WHITE;
-  if (y - 1 >= 0 && mat2d[x][y - 1] == BLACK) {
+  if (x - 1 >= 0 && mat2d[x-1][y] == BLACK) {
     sendArdiuno(DIR_UP);
-    getFreemanCode(x, y-1, width, height);
-  } else if (y - 1 >= 0 && x + 1 < width && mat2d[x+1][y - 1] == BLACK) {
+    x--;
+    getFreemanCode(width, height);
+  } else if (x - 1 >= 0 && y + 1 < height && mat2d[x-1][y + 1] == BLACK) {
     sendArdiuno(DIR_UP_RIGHT);
-    getFreemanCode(x+1, y-1, width, height);
-  } else if (x + 1 < width && mat2d[x+1][y] == BLACK) {
+    x--;
+    y++;
+    getFreemanCode(width, height);
+  } else if (y + 1 < height && mat2d[x][y+1] == BLACK) {
     sendArdiuno(DIR_RIGHT);
-    getFreemanCode(x+1, y, width, height);
-  } else if (y + 1 < height && x + 1 < width && mat2d[x+1][y + 1] == BLACK) {
+    y++;
+    getFreemanCode(width, height);
+  } else if (x + 1 < width && y + 1 < height && mat2d[x+1][y + 1] == BLACK) {
     sendArdiuno(DIR_DOWN_RIGHT);
-    getFreemanCode(x+1, y+1, width, height);
-  } else if (y + 1 < height && mat2d[x][y + 1] == BLACK) {
+    x++;
+    y++;
+    getFreemanCode(width, height);
+  } else if (x + 1 < width && mat2d[x + 1][y] == BLACK) {
     sendArdiuno(DIR_DOWN);
-    getFreemanCode(x, y+1, width, height);
-  } else if (y + 1 < height && x - 1 >= 0 && mat2d[x-1][y + 1] == BLACK) {
+    x++;
+    getFreemanCode(width, height);
+  } else if (x + 1 >= 0 && y - 1 < height && mat2d[x+1][y - 1] == BLACK) {
     sendArdiuno(DIR_DOWN_LEFT);
-    getFreemanCode(x-1, y+1, width, height);
-  } else if (x - 1 >= 0 && mat2d[x-1][y] == BLACK) {
+    x++;
+    y--;
+    getFreemanCode(width, height);
+  } else if (y - 1 >= 0 && mat2d[x][y-1] == BLACK) {
     sendArdiuno(DIR_LEFT);
-    getFreemanCode(x-1, y, width, height);
+    y--;
+    getFreemanCode(width, height);
   } else if (y -1 >= 0 && x - 1 >= 0 && mat2d[x-1][y-1] == BLACK) {
     sendArdiuno(DIR_UP_LEFT);
-    getFreemanCode(x-1, y-1, width, height);
+    x--;
+    y--;
+    getFreemanCode(width, height);
   }
 }
 
@@ -310,7 +355,7 @@ void sendArdiuno(int val) {
   if (hasArduino) {
     port.write(Integer.toString(val));
     port.write('e');
-    delay(1000);
+    delay(2000);
     waitOK();
   }
 }
@@ -319,9 +364,9 @@ void waitOK(){
   try {
     while (port.available() > 0) {
       String message = port.readStringUntil(13);
-      //if (message != null) {
+      if (message != null) {
         println("message received: "+trim(message));
-      //}
+      }
       if ("ok".equals(trim(message))) {
         break;
       }
