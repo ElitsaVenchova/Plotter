@@ -133,7 +133,7 @@ void movePen() {
     for (int pos = PEN_UP_POS; pos >= PEN_DOWN_POS; pos -= 1) { // goes from 180 degrees to 135 degrees
       // in steps of 1 degree
       penServo.write(pos);
-      delay(70);
+      delay(50);
     }
     isPenUp = false;
   }
@@ -164,15 +164,15 @@ void moveStep(int dirX, int dirY) {
   int lenght = 0;
   if (!isPrevPenUp) {
     if (!isPenUp) {
-      lenght = 40;
+      lenght = 20;
     } else {
-      lenght = 40;
+      lenght = 20;
     }
   } else {
     if (!isPenUp) {
-      lenght = -1;
+      lenght = 20;
     } else {
-      lenght = 40;
+      lenght = 20;
     }
   }
 

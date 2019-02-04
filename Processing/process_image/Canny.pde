@@ -7,6 +7,7 @@ enum CannyThreshold {
 Histogram grayHist, grayHistEqualized;//Хистограмата на сивото изображение, Хистограмата след изравняване
 PImage  cannyMean, cannyMedian, cannyMeanEqualized, cannyMedianEqualized;
 float lowerInd = 0.66, upperInd = /*1.98,1.33*/1.33;//Индектси за определяне на горна и долна граница на threshold
+int mean, median,meanEqualized, medianEqualized;
 
 //Прилагане на алгоритъма Canny
 //src - входно изображение
@@ -56,7 +57,7 @@ int findMedian(int mid, int[] hist) {
       mid -= hist[i];
     }
   }
-
+ median = res;
   return res;
 }
 
@@ -66,6 +67,7 @@ int findMean(int srcSize, int[] vals) {
   for (int i=0; i<vals.length; i++) {
     sum += i*vals[i];
   }
+  mean = sum/srcSize;
   return sum/srcSize;
 }
 
