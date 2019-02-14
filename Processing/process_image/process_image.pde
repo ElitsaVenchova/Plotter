@@ -3,8 +3,8 @@ import processing.serial.*;
 
 //Изображението
 OpenCV opencv;
-PImage  img, gray, grayEqualized, adaptive, adaptiveEqualized, threshold, thresholdEqualized, res;
-String imgPath = "../data/test19.jpg";//Изображението, което ще се обработва
+PImage  img, gray, grayEqualized, adaptive, adaptiveEqualized, threshold, thresholdEqualized, res, buffer;
+String imgPath = "../data/test24.jpg";//Изображението, което ще се обработва
 color[][] mat2d;//Пикселите на изображението, което ще се изчертава в двумерен масив
 
 boolean rotateIfNecessary = true; //да се ротира ли изображение, ако не е ориентирано както плотера
@@ -15,7 +15,7 @@ void setup() {
 
   size(800, 800);//задаване на размер на екрана с информация за изходното изображение
   
-  PImage buffer = threshold;
+ buffer = threshold;
 
   res = buffer;
   //OpenCV.HORIZONTAL, OpenCV.VERTICAL, or OpenCV.BOTH

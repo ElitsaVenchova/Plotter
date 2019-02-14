@@ -28,7 +28,7 @@ void processImage() {
 
   print("threshold");
   opencv = new OpenCV(this, img);
-  opencv.threshold(170);
+  opencv.threshold(200);
   threshold = opencv.getSnapshot();
   threshold.save("../output/4threshold.jpg");
 
@@ -48,7 +48,7 @@ void processImage() {
 
   print("thresholdEqualized");
   opencv = new OpenCV(this, grayEqualized);
-  opencv.threshold(170);
+  opencv.threshold(240);
   thresholdEqualized = opencv.getSnapshot();
   thresholdEqualized.save("../output/8thresholdEqualized.jpg");
 
